@@ -1,0 +1,3 @@
+#!/bin/sh
+# Remove any automatically installed kernel packages
+apt-get remove --purge -y linux-image* || true
