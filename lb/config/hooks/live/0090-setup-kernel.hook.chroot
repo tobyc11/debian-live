@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+
+KERNEL_VERSION=$(ls -1 /boot/vmlinuz-* 2>/dev/null | head -n1 | sed 's/\/boot\/vmlinuz-//g' || echo "")
+
+if [ -z "$KERNEL_VERSION" ]; then
+    echo "Error: KERNEL_VERSION not set"
+    exit 1
+fi
+
+# Ensure kernel image exists
+if [ ! -f "/boot/vmlinuz-${KERNEL_VERSION}" ]; then
+    echo "Error: Kernel image not found at /boot/vmlinuz-${KERNEL_VERSION}"
+    exit 1
+fi
+
+# Ensure modules exist
+if [ ! -d "/lib/modules/${KERNEL_VERSION}" ]; then
+    echo "Error: Kernel modules not found at /lib/modules/${KERNEL_VERSION}"
+    exit 1
+fi
+
+# Generate initrd if it doesn't exist
+if [ ! -f "/boot/initrd.img-${KERNEL_VERSION}" ]; then
+    echo "Generating initramfs for kernel ${KERNEL_VERSION}"
+    update-initramfs -c -k "${KERNEL_VERSION}"
+fi
+
+# Create symlinks
+cd /boot
+ln -sf vmlinuz-${KERNEL_VERSION} vmlinuz
+ln -sf initrd.img-${KERNEL_VERSION} initrd.img
+
+# Update kernel.version file
+echo "${KERNEL_VERSION}" > /kernel.version
